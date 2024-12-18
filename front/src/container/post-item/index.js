@@ -98,7 +98,7 @@ export default function Container({ id, username, text, date }) {
             {status === LOAD_STATUS.ERROR && (
               <Alert status={status} message={message} />
             )}
-            .
+
             {status === LOAD_STATUS.SUCCESS &&
               data.isEmpty === false &&
               data.reply.map((item) => (

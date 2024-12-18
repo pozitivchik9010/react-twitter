@@ -71,7 +71,7 @@ export default function Container() {
       {status === LOAD_STATUS.ERROR && (
         <Alert status={status} message={message} />
       )}
-      .
+
       {status === LOAD_STATUS.SUCCESS && (
         <Fragment>
           {data.isEmpty ? (
