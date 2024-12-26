@@ -1,9 +1,16 @@
-import { useState, Fragment, useEffect, useReducer } from "react";
+import {
+  useState,
+  Fragment,
+  useEffect,
+  useReducer,
+  lazy,
+  Suspense,
+  useCallback,
+} from "react";
 import Title from "../../component/title";
 import Grid from "../../component/grid";
 import Box from "../../component/box";
 import PostCreate from "../post-create";
-import PostItem from "../post-item";
 import { Alert, LOAD_STATUS, Skeleton } from "../../component/load";
 import { getDate } from "../../util/getDate";
 import {
@@ -12,10 +19,12 @@ import {
   REQUEST_ACTION_TYPE,
 } from "../../util/request";
 
+const PostItem = lazy(() => import("../post-item"));
+
 export default function Container() {
   const [state, dispatch] = useReducer(requestReducer, requestInitialState);
 
-  const getData = async () => {
+  const getData = useCallback(async () => {
     dispatch({ type: REQUEST_ACTION_TYPE.PROGRESS });
 
     try {
@@ -40,7 +49,7 @@ export default function Container() {
         payload: error.message,
       });
     }
-  };
+  }, []);
 
   const convertData = (raw) => ({
     list: raw.list.reverse().map(({ id, username, text, date }) => ({
@@ -54,11 +63,11 @@ export default function Container() {
   useEffect(() => {
     getData();
 
-    const intervalId = setInterval(() => getData(), 5000);
+    // const intervalId = setInterval(() => getData(), 5000);
 
-    return () => {
-      clearInterval(intervalId);
-    };
+    // return () => {
+    //   clearInterval(intervalId);
+    // };
   }, []);
 
   return (
@@ -96,7 +105,15 @@ export default function Container() {
           ) : (
             state.data.list.map((item) => (
               <Fragment key={item.id}>
-                <PostItem {...item} />
+                <Suspense
+                  fallback={
+                    <Box>
+                      <Skeleton />
+                    </Box>
+                  }
+                >
+                  <PostItem {...item} />
+                </Suspense>
               </Fragment>
             ))
           )}

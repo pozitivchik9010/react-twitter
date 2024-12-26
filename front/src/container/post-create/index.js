@@ -1,4 +1,4 @@
-import { useState, useReducer } from "react";
+import { useState, useReducer, memo, useCallback } from "react";
 import "./index.css";
 import {
   requestInitialState,
@@ -11,49 +11,53 @@ import Grid from "../../component/grid";
 
 import { Alert, Loader, LOAD_STATUS } from "../../component/load";
 
-export default function Container({
-  onCreate,
-  placeholder,
-  button,
-  id = null,
-}) {
+function Container({ onCreate, placeholder, button, id = null }) {
   const [state, dispatch] = useReducer(requestReducer, requestInitialState);
 
-  const handleSubmit = (value) => {
-    return sendData({ value });
-  };
+  const convertData = useCallback(
+    ({ value }) =>
+      JSON.stringify({
+        text: value,
+        username: "user",
+        postId: id,
+      }),
+    [id]
+  );
 
-  const sendData = async (dataToSend) => {
-    dispatch({ type: REQUEST_ACTION_TYPE.PROGRESS });
+  const sendData = useCallback(
+    async (dataToSend) => {
+      dispatch({ type: REQUEST_ACTION_TYPE.PROGRESS });
 
-    try {
-      const res = await fetch("http://localhost:4000/post-create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: convertData(dataToSend),
-      });
+      try {
+        const res = await fetch("http://localhost:4000/post-create", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: convertData(dataToSend),
+        });
 
-      const data = await res.json();
+        const data = await res.json();
 
-      if (res.ok) {
-        dispatch({ type: REQUEST_ACTION_TYPE.RESET });
-        if (onCreate) onCreate();
-      } else {
-        dispatch({ type: REQUEST_ACTION_TYPE.ERROR, message: data.message });
+        if (res.ok) {
+          dispatch({ type: REQUEST_ACTION_TYPE.RESET });
+          if (onCreate) onCreate();
+        } else {
+          dispatch({ type: REQUEST_ACTION_TYPE.ERROR, message: data.message });
+        }
+      } catch (error) {
+        dispatch({ type: REQUEST_ACTION_TYPE.ERROR, message: error.message });
       }
-    } catch (error) {
-      dispatch({ type: REQUEST_ACTION_TYPE.ERROR, message: error.message });
-    }
-  };
+    },
+    [convertData, onCreate]
+  );
 
-  const convertData = ({ value }) =>
-    JSON.stringify({
-      text: value,
-      username: "user",
-      postId: id,
-    });
+  const handleSubmit = useCallback(
+    (value) => {
+      return sendData({ value });
+    },
+    [sendData]
+  );
   return (
     <Grid>
       <FieldForm
@@ -68,3 +72,7 @@ export default function Container({
     </Grid>
   );
 }
+
+export default memo(Container, (prev, next) => {
+  return true;
+});
